@@ -1,12 +1,9 @@
-;load bitmap program
-
 ;Load the bitmap into memory at adress $1FFE, becuse the images has
 ;a 2 byte header, so $2000-2bytes = $1FFE
 CLRSCN = $E544	; Clear Screen
 
 VIC = $D000		       ; VIC Video Interface Chip
-; SPRITEBASE_X = VIC
-; SPRITEBASE_Y = VIC+1
+
 SPRITEBASE_X = VIC
 SPRITEBASE_Y = VIC+1
 
@@ -56,29 +53,9 @@ begin:
   sta	$d020
   sta	$d021
 
-	; Ändrar inget
-	; ; Extra background color #1 (only bits #0-#3).
-	; lda #$0D		; $0D = Ljus grön
-	; sta $d022		; Sprite extra color #1 (only bits #0-#3).
-
-	; Ändrar inget
-	; ; Extra background color #2 (only bits #0-#3).
-	; lda #$0D		; $0D = Ljus grön
-	; sta $d023		; Sprite extra color #1 (only bits #0-#3).
-
-	; ; Ändrar inget
-	; ; Extra background color #3 (only bits #0-#3).
-	; lda #$0d		; $0D = Ljus grön
-	; sta $d024		; Sprite extra color #1 (only bits #0-#3).
-
   ; Sprite extra color #1 (only bits #0-#3).
 	lda #$04		; $0D = Ljus grön
 	sta $d025		; Sprite extra color #1 (only bits #0-#3).
-
-	; ; Ändrar inget
-	; ; Sprite extra color #2 (only bits #0-#3).
-	; lda #$0d		; $07 = Ljus gul
-	; sta $d026		; Sprite extra color #2 (only bits #0-#3).
 
   ;Set color for sprite 1
 	lda #$07		; $05 = Mörk grön
@@ -185,7 +162,6 @@ bitmap:
   sta $D010
 
   ; Set initial Sprite texture
-
   ldy ScrollerIndex
   ldx #07
 SetSpriteData:
@@ -195,7 +171,7 @@ SetSpriteData:
 	cmp #$20			; Blank
 	bne NotSpace
 
-	lda #2	; eh.. bytte från 6 till 2, fixade konstig sprite texture(!?)
+	lda #2
 	sta $4400,x
 
 NotSpace:
@@ -216,13 +192,6 @@ NotSpace:
 	dey
   sty ScrollerIndex   ; Save index
 
-; ; TEST
-; 	ldy #15
-; 	lda Scrollertext,y
-; 	ldy #07
-; 	clc
-; 	adc #12
-; 	sta SPRITE_PTR_BASE,y
 
 	; Setup a raster intrerrupt
 	; ----------------------------------------------------------------------------
@@ -244,9 +213,6 @@ NotSpace:
 	lda #$c8   ;this is how to tell at which rasterline we want the irq to be triggered
 	sta $d012
 
-	; lda #$1b   ;as there are more than 256 rasterlines, the topmost bit of $d011 serves as
-	; sta $d011  ;the 9th bit for the rasterline we want our irq to be triggered.
-	;            ;here we simply set up a character screen, leaving the topmost bit 0.
 
 	lda #$35   ;we turn off the BASIC and KERNAL rom here
 	sta $01    ;the cpu now sees RAM everywhere except at $d000-$e000, where still the registers of
@@ -264,30 +230,12 @@ NotSpace:
 
 	jmp *      ;we better don't RTS, the ROMS are now switched off, there's no way back to the system
 
-
-
 irq:
-
-	;Being all kernal irq handlers switched off we have to do more work by ourselves.
-	;When an interrupt happens the CPU will stop what its doing, store the status and return address
-	;into the stack, and then jump to the interrupt routine. It will not store other registers, and if
-	;we destroy the value of A/X/Y in the interrupt routine, then when returning from the interrupt to
-	;what the CPU was doing will lead to unpredictable results (most probably a crash). So we better
-	;store those registers, and restore their original value before reentering the code the CPU was
-	;interrupted running.
-
-	;If you won't change the value of a register you are safe to not to store / restore its value.
-	;However, it's easy to screw up code like that with later modifying it to use another register too
-	;and forgetting about storing its state.
-
-	;The method shown here to store the registers is the most orthodox and most failsafe.
-
 	pha        ;store register A in stack
 	txa
 	pha        ;store register X in stack
 	tya
 	pha        ;store register Y in stack
-
 
 
 loop:
@@ -335,8 +283,6 @@ NotZero:
   ldy ScrollerIndex
   lda Scrollertext,y    ; Get next letter
 
-	; Ska försöka få scrollern att loopa om tidigare så
-	; att man slipper vänta på att ScrollerIndex slår runt
 	cpy #180
 	bne nottheendofscroller
 
@@ -344,14 +290,14 @@ NotZero:
 	sty ScrollerIndex
 
 nottheendofscroller:
-; 	; ; Kolla efter special karaktärer
-; 	; cmp #$20			; Blank
-; 	; bne ContinueCharSetting
-; 	;
-; 	; lda #106
-;
-;
-; ContinueCharSetting:
+	; ; Kolla efter special karaktärer
+	; cmp #$20			; Blank
+	; bne ContinueCharSetting
+	;
+	; lda #106
+
+
+ContinueCharSetting:
 	ldy Sprite_Pointer_Index
   clc
   adc #12
@@ -370,10 +316,6 @@ NoChange:
 	bne MoveSprite 	; Branch on Z = 0
   ; -----------------------------------
   ; jmp loop ; dbg stop
-
-
-
-
 
   inc SINE_POS
 
@@ -430,8 +372,6 @@ smallloop:
 	           ;where the CPU was when the interrupt condition arised which will make the CPU continue
 	           ;the code it was interrupted at also restores the status register of the CPU
 
-;-----------------------------------
-
 
 delayRoutine: ; delay for sprite move
 	  ldx #$02	; set prescaler outer loop
@@ -480,7 +420,4 @@ Speed
 .Byte $04
 
 Scrollertext:
-; .text "ABCDEFGHIJKLMNQPRSTXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-; .text "ABCDEF GH IJKLMNQPRSTXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-; .text "HEJALLABARNNUBLIRDETBARNPROGRAM"
 .text "             GREETINGS FROM HIGH COAST HACK! AND TO THE OLD FARTS MAKEING IT POSSIBLE. THANKS TO ZCHRIS MENTHOS ATTLE LUDDE! MUSIC IS STOLEN FROM: ABEL VINCZE OVERSHADOW 19 INTRO"
